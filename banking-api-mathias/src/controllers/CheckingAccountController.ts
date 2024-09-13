@@ -1,103 +1,135 @@
-import {database} from "../prisma/database.ts"
+//import {database} from "../prisma/database.ts". //problema do service agora
 import {NextFunction, Request, Response} from "express"
+import CheckingAccountService from "../service/CheckingAccountService.ts";
 
 class CheckingAccountController {
 
-    async create(request: Request, response: Response): Promise<Response> {
-        try {
-            const {name, email, number} = request.body
+    private checkingAccountService: CheckingAccountService;
 
-            if (!name || !email || !number) {
-                return response.status(400).send({error: "Please enter a valid data"})
+    constructor() {
+        this.checkingAccountService = new CheckingAccountService //injeção
+    }
+
+    create = async (request: Request, response: Response) => {
+        try {
+
+
+            const {name, email, number} = request.body
+            const validate = this.validateNameMailNumber(name,email,number)
+            if(!validate.isValid){
+                return response.status(400).json({error: validate.msg})
             }
 
-            const checkingAccount = await database.checkingAccount.create({
-                data: {
-                    name,
-                    email,
-                    number
-                }
-            })
+            const checkingAccount = await this.checkingAccountService.create(name, email, number)
             return response.status(201).json({checkingAccount})
+
         } catch (error) {
-            console.log(error);
-            return response.status(400).json({error: error})
+            this.handleError(response, error, "Error creating checkingAccount")
         }
     }
 
-    async findAll(_req: Request, res: Response) {
+    findAll =  async ( response: Response)=> {
         try {
-            const checkingAccounts = await database.checkingAccount.findMany()
-            return res.status(200).json(checkingAccounts)
+            const checkingAccounts = await this.checkingAccountService.getAll()
+            return response.status(200).json(checkingAccounts)
 
         } catch (error) {
-            console.log(error);
-            return res.status(404).json({error: error})
+            this.handleError(response, error, "Error finding all checkingAccounts")
         }
     }
 
-    async findById(request: Request, response: Response): Promise<Response> {
-        try {
-            const id = request.params.id
 
-            const checkingAccount = await database.checkingAccount.findUnique({
-                where: {id}
-            })
-            if (checkingAccount == null)
-                return response.status(404).json({error: "id not found"})
 
-            return response.status(200).json(checkingAccount)
-        } catch (error) {
-            console.log(error);
-            return response.status(404).json({msg: "Error on catch"})
-        }
-    }
-
-    async update(request: Request, response: Response): Promise<Response> {
+    update = async (request: Request, response: Response) => {
         try {
             const id = request.params.id
             const {name, email, number} = request.body
+            const validate = this.validateNameMailNumber(name,email,number)
 
-            const checkingAccountUpdated = await database.checkingAccount.update({
-                where: {id},
-                data: {name, number, email}
-            })
+            if(!validate.isValid){
+                return response.status(400).json(validate.msg)
+            }
+
+            const checkingAccountUpdated = this.checkingAccountService.update(id, name, email, number)
 
             return response.status(200).json({checkingAccountUpdated})
 
         } catch (error) {
-            console.log(error);
-            return response.status(404).json({error: error})
+            this.handleError(response, error, "Error updating CheckingAccount")
         }
     }
 
-    async delete(request: Request, response: Response): Promise<Response> {
+    delete =  async (request: Request, response: Response) => {
         try {
             const id = request.params.id
-
-            await database.checkingAccount.delete({where: {id}})
-            return response.status(200).json()
+            await this.checkingAccountService.delete(id)
+            return response.status(204).json()
 
         } catch (error) {
-            console.log(error);
-            return response.status(404).json({error: error})
+            this.handleError(response, error, "Error deleting CheckingAccount")
         }
     }
 
-    async verifyExistence(request: Request, response: Response, next: NextFunction) {
+    findById = async (request: Request, response: Response)=> {
         try {
             const id = request.params.id
-            const checkingAccount = await database.checkingAccount.findUnique({where: {id}})
+            const checkingAccount = await this.checkingAccountService.getById(id)
+            if (!checkingAccount)
+                return response.status(404).json({error: "id for checkingAccount not found"})
+
+            return response.status(200).json(checkingAccount)
+        } catch (error) {
+            this.handleError(response, error, "Error finding checkingAccount by id")
+        }
+    }
+
+    verifyExistence = async (request: Request, response: Response, next: NextFunction)=> {
+        try {
+            const id = request.params.id
+            const checkingAccount = await this.checkingAccountService.getById(id)
             if (checkingAccount == null)
-                return response.status(404).json({error: "id not found"})
+                return response.status(404).json({error: "id for checkingAccount not found"})
 
             return next()
         } catch (error) {
-            console.log(error);
-            return response.status(500).json({error: error})
+         this.handleError(response, error, "Error verifying existence")
         }
+    }
+
+    findByName = async (request: Request, response: Response)=> {
+        try{
+            const name = request.params.name;
+            const checkingAccount = this.checkingAccountService.findByName(name)
+            return response.status(200).json(checkingAccount)
+        }catch (error) {
+            this.handleError(response, error, "Error finding checkingAccount by name")
+        }
+
+}
+
+    private handleError(response: Response, error: unknown, msg: String) {
+        if (error instanceof Error) {
+            console.error(`${msg}. ${error.message}`)
+            return response.status(400).json({error: error.message})
+        } else {
+            console.error(`Unexpected error ${error}`)
+            return response.status(500).json({error: "An unexpected error occurred."})
+        }
+    }
+
+    private validateNameMailNumber(name: string, email: string, number: string){
+        if (name.trim().length <= 0) { //simplificado, name sempre é string
+            return {isValid: false, msg: "invalid name"}
+        }
+        if (email.trim().length == 0 ) {
+            return {isValid: false, msg: "invalid email"}
+        }
+        if (number.trim().length <=0 ) {
+            return {isValid: false, msg: "invalid number"}
+        }
+        return {isValid: true}
     }
 }
 
-export { CheckingAccountController }
+export {CheckingAccountController}
 

@@ -72,11 +72,7 @@ class StatementService {
     async getById(id: string) {
         try {
             const statement = await database.statement.findUnique(
-                {
-                    where: {
-                        id
-                    }
-                }
+                {where: {id}}
             )
             return statement
         } catch (error) {

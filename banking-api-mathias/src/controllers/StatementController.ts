@@ -101,12 +101,12 @@ class StatementController {
         }
     }
 
-    private checkAmount(amount: any, description: any)
+    private checkAmount(amount: number, description: string)
     {
-        if (typeof amount !== "number" || amount <= 0) {
+        if (amount <= 0) {
             return {isValid: false, msg: "invalid amount: positive number"}
         }
-        if (typeof description !== "string" || description.trim().length == 0 ) {
+        if (description.trim().length == 0 ) {
             return {isValid: false, msg: "invalid description"}
         }
         return {isValid: true}

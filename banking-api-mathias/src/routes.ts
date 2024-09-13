@@ -20,6 +20,7 @@ routes.post(`${url}/:id/withdraw`, checkingAccountController.verifyExistence, st
 routes.get(`${url}/:id/statement/period`, checkingAccountController.verifyExistence, statementController.getByPeriod)
 routes.post(`${url}/:id/statement/pix`, checkingAccountController.verifyExistence, statementController.pix)
 routes.post(`${url}/:id/statement/ted`, checkingAccountController.verifyExistence, statementController.ted)
+routes.get(`${url}`, checkingAccountController.findByName)
 
 
 
