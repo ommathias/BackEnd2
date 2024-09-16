@@ -98,8 +98,9 @@ class CheckingAccountController {
 
     findByName = async (request: Request, response: Response)=> {
         try{
-            const name = request.params.name;
-            const checkingAccount = this.checkingAccountService.findByName(name)
+            const {name} = request.query
+
+            const checkingAccount = this.checkingAccountService.findByName(name as string)
             return response.status(200).json(checkingAccount)
         }catch (error) {
             this.handleError(response, error, "Error finding checkingAccount by name")
