@@ -6,6 +6,12 @@ const { sign, verify } = jwt;
 import bcrypt from 'bcryptjs';
 const { compare } = bcrypt;
 
+type TokenPayload = {
+    id: string;
+    iat: number;
+    exp: number;
+}
+
 class AuthController {
     //recebe os dados de autenticaçao e retorna um token de acesso
 
@@ -56,7 +62,8 @@ class AuthController {
             //munido do auth, verifico.
 
             const decoded = verify(token,process.env.JWT_SECRET as string)
-
+            const { id } = decoded as TokenPayload //tipo CRIADO, declarar fora da classe
+            console.log(`ID: ${id}`) //eu posso retornar o ID do token para demais verificações necessárias nesse id (permissões, por exemplo)
             return next()
 
 
